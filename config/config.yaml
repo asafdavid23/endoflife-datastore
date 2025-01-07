@@ -1,0 +1,7 @@
+Mongo:
+  URI: ""
+  Database: ""
+  Collection: ""
+
+Kubernetes:
+  Namespace: ""
