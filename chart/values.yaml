@@ -1,0 +1,25 @@
+# Default values for the Helm chart.
+
+# Datastore microservice configuration
+datastore:
+  image:
+    repository: asafdavid23/endoflife-datastore
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+  config:
+    mongodbUri: mongodb://admin:password@localhost:27017
+    logLevel: info
+
+# # MongoDB configuration
+# mongodb:
+#   image:
+#     repository: mongo
+#     tag: latest
+#     pullPolicy: IfNotPresent
+#   port: 27017
+#   replicas: 1
+#   persistence:
+#     enabled: false
+#     storageClass: ""
+#     size: 1Gi

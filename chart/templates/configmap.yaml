@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datastore-config
+data:
+  mongodbUri: "{{ .Values.datastore.config.mongodbUri }}"
+  logLevel: "{{ .Values.datastore.config.logLevel }}"

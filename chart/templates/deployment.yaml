@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: endoflife-datastore
+  labels:
+    app: endoflife-datastore
+spec:
+  replicas: {{ .Values.datastore.replicas }}
+  selector:
+    matchLabels:
+      app: endoflife-datastore
+  template:
+    metadata:
+      labels:
+        app: endoflife-datastore
+    spec:
+      containers:
+        - name: datastore
+          image: "{{ .Values.datastore.image.repository }}:{{ .Values.datastore.image.tag }}"
+          imagePullPolicy: {{ .Values.datastore.image.pullPolicy }}
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: datastore-config
+                  key: mongodbUri
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: datastore-config
+                  key: logLevel

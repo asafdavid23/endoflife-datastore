@@ -6,11 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/asafdavid23/endoflife-datastore/internal/api"
 	"github.com/asafdavid23/endoflife-datastore/internal/config"
 	"github.com/asafdavid23/endoflife-datastore/internal/k8s"
 	"github.com/asafdavid23/endoflife-datastore/internal/mongo"
-
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,23 +42,17 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	mongoClient, err := mongo.Connect(ctx, cfg.Mongo.URI)
+	mongoClient, err := mongo.Connect(ctx, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 	defer mongoClient.Disconnect(ctx)
 
-	mongoCollection := mongoClient.Database(cfg.Mongo.Database).Collection(cfg.Mongo.Collection)
-	log.Printf("Connected to MongoDB collection: %s", cfg.Mongo.Collection)
+	mongoCollection := mongoClient.Database(os.Getenv("MONGODB_DATABASE")).Collection(os.Getenv("MONGODB_COLLECTION"))
+	log.Printf("Connected to MongoDB collection: %s", os.Getenv("MONGODB_COLLECTION"))
 
 	// Watch and process ProductCheck objects
 	if err := k8s.WatchAndProcessProductChecks(ctx, k8sClient, mongoCollection, cfg.Kubernetes.Namespace); err != nil {
 		log.Fatalf("Error watching ProductCheck objects: %v", err)
-	}
-
-	// Start API server
-	apiServer := api.NewServer(k8sClient, mongoCollection, cfg.Kubernetes.Namespace)
-	if err := apiServer.Start(":8080"); err != nil {
-		log.Fatalf("Failed to start API server: %v", err)
 	}
 }
