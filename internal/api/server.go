@@ -1,74 +1,51 @@
 package api
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 
-	"github.com/asafdavid23/endoflife-datastore/internal/k8s"
-
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"github.com/gin-gonic/gin"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/asafdavid23/endoflife-datastore/internal/models"
 )
 
-// Server defines the HTTP server.
-type Server struct {
-	router          *gin.Engine
-	k8sClient       client.Client
-	mongoCollection *mongo.Collection
-	namespace       string
-}
+func SendNotifications(products []models.Product) {
+	// Notifier microservice URL
+	notifierURL := "http://endoflife-notifier:8080/api/notify"
 
-// NewServer creates a new API server instance.
-func NewServer(k8sClient client.Client, mongoCollection *mongo.Collection, namespace string) *Server {
-	s := &Server{
-		router:          gin.Default(),
-		k8sClient:       k8sClient,
-		mongoCollection: mongoCollection,
-		namespace:       namespace,
-	}
-	s.setupRoutes()
-	return s
-}
-
-// setupRoutes sets up the HTTP API endpoints.
-func (s *Server) setupRoutes() {
-	s.router.GET("/test", s.testHandler)
-}
-
-// Start runs the API server on the specified port.
-func (s *Server) Start(port string) error {
-	log.Printf("Starting API server on port %s", port)
-	return s.router.Run(":" + port)
-}
-
-// testHandler handles the /test endpoint to test Kubernetes and MongoDB interactions.
-func (s *Server) testHandler(c *gin.Context) {
-	ctx := context.Background()
-
-	// Fetch ProductCheck objects
-	productChecks, err := k8s.FetchProductChecks(ctx, s.k8sClient, s.namespace)
+	payload, err := json.Marshal(products)
 	if err != nil {
-		log.Printf("Failed to fetch ProductCheck objects: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch ProductChecks"})
+		log.Printf("Error marshaling products: %v", err)
 		return
 	}
 
-	// Simulate updating MongoDB
-	for _, productCheck := range productChecks {
-		err := k8s.UpdateMongoDB(ctx, s.mongoCollection, productCheck)
-		if err != nil {
-			log.Printf("Failed to update MongoDB for ProductCheck %s: %v", productCheck.Name, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update MongoDB"})
-			return
-		}
+	resp, err := http.Post(notifierURL, "application/json", bytes.NewBuffer(payload))
+	if err != nil {
+		log.Printf("Error sending notification: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Notifier microservice responded with status: %v", resp.Status)
+	} else {
+		log.Println("Notifications sent successfully.")
+	}
+}
+
+func TestNotifyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
-	// Respond with success
-	c.JSON(http.StatusOK, gin.H{
-		"message":        "ProductChecks processed successfully",
-		"processedCount": len(productChecks),
-	})
+	// Parse the request body
+	var products []models.Product
+	if err := json.NewDecoder(r.Body).Decode(&products); err != nil {
+		http.Error(w, "Failed to parse request body", http.StatusBadRequest)
+		return
+	}
+
+	// Notify the user about the products
+
 }

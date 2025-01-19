@@ -4,13 +4,20 @@
 datastore:
   image:
     repository: asafdavid23/endoflife-datastore
-    tag: latest
+    tag: v1.0.9
     pullPolicy: IfNotPresent
   replicas: 1
   config:
-    mongodbUri: mongodb://admin:password@localhost:27017
+    mongodbUri: mongodb://root:LsTmasZSBw=$@mongodb.default.svc.cluster.local:27017
     logLevel: info
+    mongodbDatabase: endoflife
+    mongodbCollection: products
 
+rbac:
+  serviceAccount:
+    enabled: true
+    name: endoflife-datastore
+  
 # # MongoDB configuration
 # mongodb:
 #   image:

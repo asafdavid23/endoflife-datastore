@@ -1,7 +1,0 @@
-Mongo:
-  URI: mongodb://admin:password@localhost:27017
-  Database: endoflife
-  Collection: eol_data
-
-Kubernetes:
-  Namespace: default

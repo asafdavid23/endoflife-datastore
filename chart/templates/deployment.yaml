@@ -14,6 +14,7 @@ spec:
       labels:
         app: endoflife-datastore
     spec:
+      serviceAccountName: {{ .Values.rbac.serviceAccount.name }}
       containers:
         - name: datastore
           image: "{{ .Values.datastore.image.repository }}:{{ .Values.datastore.image.tag }}"
@@ -29,3 +30,9 @@ spec:
                 configMapKeyRef:
                   name: datastore-config
                   key: logLevel
+            - name: WATCH_NAMESPACE
+              value: default
+            - name: MONGODB_DATABASE
+              value: {{ .Values.datastore.config.mongodbDatabase }}
+            - name: MONGODB_COLLECTION
+              value: {{ .Values.datastore.config.mongodbCollection }}
